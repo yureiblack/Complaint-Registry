@@ -3,7 +3,7 @@
     /* Core Setup */
     "target": "ES2020",
     "module": "CommonJS",
-
+    "moduleResolution": "node",
     "rootDir": "./src",
     "outDir": "./dist",
 
@@ -14,7 +14,6 @@
 
     /* Node Compatibility */
     "esModuleInterop": true,
-    "types": ["node"],
     "resolveJsonModule": true,
 
     /* Performance */
