@@ -23,7 +23,7 @@ model User {
 model Complaint {
   id          String   @id @default(uuid())
   title       String
-  description String
+  description String   @db.Text
   status      ComplaintStatus @default(SUBMITTED)
   isPublic    Boolean  @default(false)
   isAnonymous Boolean  @default(false)

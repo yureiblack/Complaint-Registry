@@ -8,7 +8,6 @@ const EmailNotifier_1 = require("../../infrastructure/notifications/EmailNotifie
 class ComplaintService {
     constructor(repo) {
         this.repo = repo;
-        // 🔥 Initialize observer system
         this.subject = new ComplaintSubject_1.ComplaintSubject();
         this.subject.subscribe(new InAppNotifier_1.InAppNotifier());
         this.subject.subscribe(new EmailNotifier_1.EmailNotifier());
@@ -17,9 +16,28 @@ class ComplaintService {
     // CREATE
     // -------------------------
     async createComplaint(dto) {
-        const complaint = new Complaint_1.Complaint("", dto.title, dto.description, dto.userId);
+        const title = dto.title?.trim();
+        const description = dto.description?.trim();
+        if (!title) {
+            throw new Error("Title is required");
+        }
+        if (!description) {
+            throw new Error("Description is required");
+        }
+        if (title.length < 3) {
+            throw new Error("Title must be at least 3 characters long");
+        }
+        if (title.length > 150) {
+            throw new Error("Title cannot exceed 150 characters");
+        }
+        if (description.length < 10) {
+            throw new Error("Description must be at least 10 characters long");
+        }
+        if (description.length > 5000) {
+            throw new Error("Description cannot exceed 5000 characters");
+        }
+        const complaint = new Complaint_1.Complaint("", title, description, dto.userId);
         const saved = await this.repo.create(complaint);
-        // 🔔 Notify
         this.subject.notify("COMPLAINT_CREATED", saved.toJSON());
         return saved;
     }
@@ -30,8 +48,7 @@ class ComplaintService {
         const complaint = await this.repo.findById(id);
         if (!complaint)
             throw new Error("Complaint not found");
-        if (requester.role !== "ADMIN" &&
-            complaint.userId !== requester.userId) {
+        if (requester.role !== "ADMIN" && complaint.userId !== requester.userId) {
             throw new Error("Forbidden");
         }
         return complaint;
@@ -48,7 +65,6 @@ class ComplaintService {
             throw new Error("Complaint not found");
         complaint.transitionTo(status);
         const updated = await this.repo.update(complaint);
-        // 🔔 Notify ALL observers
         this.subject.notify("STATUS_UPDATED", updated.toJSON());
         return updated;
     }
@@ -71,8 +87,7 @@ class ComplaintService {
         const complaint = await this.repo.findById(id);
         if (!complaint)
             throw new Error("Complaint not found");
-        if (user.role !== "ADMIN" &&
-            complaint.userId !== user.userId) {
+        if (user.role !== "ADMIN" && complaint.userId !== user.userId) {
             throw new Error("Forbidden");
         }
         complaint.updateVisibility(isPublic, isAnonymous);

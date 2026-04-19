@@ -16,7 +16,6 @@ export class ComplaintService {
   private subject: ComplaintSubject;
 
   constructor(private repo: IComplaintRepository) {
-    // 🔥 Initialize observer system
     this.subject = new ComplaintSubject();
 
     this.subject.subscribe(new InAppNotifier());
@@ -27,16 +26,37 @@ export class ComplaintService {
   // CREATE
   // -------------------------
   async createComplaint(dto: CreateComplaintDTO): Promise<Complaint> {
-    const complaint = new Complaint(
-      "",
-      dto.title,
-      dto.description,
-      dto.userId
-    );
+    const title = dto.title?.trim();
+    const description = dto.description?.trim();
+
+    if (!title) {
+      throw new Error("Title is required");
+    }
+
+    if (!description) {
+      throw new Error("Description is required");
+    }
+
+    if (title.length < 3) {
+      throw new Error("Title must be at least 3 characters long");
+    }
+
+    if (title.length > 150) {
+      throw new Error("Title cannot exceed 150 characters");
+    }
+
+    if (description.length < 10) {
+      throw new Error("Description must be at least 10 characters long");
+    }
+
+    if (description.length > 5000) {
+      throw new Error("Description cannot exceed 5000 characters");
+    }
+
+    const complaint = new Complaint("", title, description, dto.userId);
 
     const saved = await this.repo.create(complaint);
 
-    // 🔔 Notify
     this.subject.notify("COMPLAINT_CREATED", saved.toJSON());
 
     return saved;
@@ -49,10 +69,7 @@ export class ComplaintService {
     const complaint = await this.repo.findById(id);
     if (!complaint) throw new Error("Complaint not found");
 
-    if (
-      requester.role !== "ADMIN" &&
-      complaint.userId !== requester.userId
-    ) {
+    if (requester.role !== "ADMIN" && complaint.userId !== requester.userId) {
       throw new Error("Forbidden");
     }
 
@@ -78,7 +95,6 @@ export class ComplaintService {
 
     const updated = await this.repo.update(complaint);
 
-    // 🔔 Notify ALL observers
     this.subject.notify("STATUS_UPDATED", updated.toJSON());
 
     return updated;
@@ -111,10 +127,7 @@ export class ComplaintService {
     const complaint = await this.repo.findById(id);
     if (!complaint) throw new Error("Complaint not found");
 
-    if (
-      user.role !== "ADMIN" &&
-      complaint.userId !== user.userId
-    ) {
+    if (user.role !== "ADMIN" && complaint.userId !== user.userId) {
       throw new Error("Forbidden");
     }
 

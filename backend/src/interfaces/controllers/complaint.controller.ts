@@ -30,10 +30,7 @@ export const createComplaint = async (req: AuthRequest, res: Response) => {
 // -------------------------
 // GET BY ID
 // -------------------------
-export const getComplaint = async (
-  req: AuthRequest,
-  res: Response
-) => {
+export const getComplaint = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -52,10 +49,7 @@ export const getComplaint = async (
 // -------------------------
 // UPDATE STATUS (ADMIN)
 // -------------------------
-export const updateStatus = async (
-  req: AuthRequest,
-  res: Response
-) => {
+export const updateStatus = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -77,11 +71,11 @@ export const updateStatus = async (
 };
 
 // =====================================================
-// 🌐 PUBLIC SYSTEM
+// PUBLIC SYSTEM
 // =====================================================
 
 // -------------------------
-// 🌐 PUBLIC FEED
+// PUBLIC FEED
 // -------------------------
 export const getPublic = async (_req: Request, res: Response) => {
   try {
@@ -94,7 +88,7 @@ export const getPublic = async (_req: Request, res: Response) => {
 };
 
 // -------------------------
-// 👤 MY COMPLAINTS
+// MY COMPLAINTS
 // -------------------------
 export const getMy = async (req: AuthRequest, res: Response) => {
   try {
@@ -111,7 +105,7 @@ export const getMy = async (req: AuthRequest, res: Response) => {
 };
 
 // -------------------------
-// 🔍 SEARCH
+// SEARCH
 // -------------------------
 export const search = async (req: AuthRequest, res: Response) => {
   try {
@@ -130,12 +124,9 @@ export const search = async (req: AuthRequest, res: Response) => {
 };
 
 // -------------------------
-// 🔒 UPDATE VISIBILITY
+// UPDATE VISIBILITY
 // -------------------------
-export const updateVisibility = async (
-  req: AuthRequest,
-  res: Response
-) => {
+export const updateVisibility = async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized" });

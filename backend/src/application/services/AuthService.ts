@@ -6,7 +6,7 @@ import { JWT_SECRET } from "../../config/env";
 export class AuthService {
   constructor(private userRepo: IUserRepository) {}
 
-  async register(email: string, password: string) {
+  async register(email: string, password: string, role?: "USER" | "ADMIN") {
     const existing = await this.userRepo.findByEmail(email);
     if (existing) throw new Error("User already exists");
 
@@ -15,6 +15,7 @@ export class AuthService {
     return this.userRepo.createUser({
       email,
       password: hashed,
+      role,
     });
   }
 

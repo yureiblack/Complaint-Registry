@@ -4,13 +4,13 @@ export const api = {
   // -------------------------
   // AUTH
   // -------------------------
-  register: async (email: string, password: string) => {
+  register: async (email: string, password: string, role: string = "USER") => {
     const res = await fetch(`${BASE_URL}/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, role }),
     });
 
     return res.json();
@@ -65,6 +65,72 @@ export const api = {
 
   getPublic: async () => {
     const res = await fetch(`${BASE_URL}/complaints/public/all`);
+    return res.json();
+  },
+
+  // -------------------------
+  // STATUS UPDATES (ADMIN)
+  // -------------------------
+  updateStatus: async (
+    id: string,
+    status: string,
+    token: string
+  ) => {
+    const res = await fetch(`${BASE_URL}/complaints/${id}/status`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status }),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      throw new Error(json.message || "Failed to update status");
+    }
+
+    return json;
+  },
+
+  // -------------------------
+  // VISIBILITY UPDATES
+  // -------------------------
+  updateVisibility: async (
+    id: string,
+    isPublic: boolean,
+    isAnonymous: boolean,
+    token: string
+  ) => {
+    const res = await fetch(`${BASE_URL}/complaints/${id}/visibility`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ isPublic, isAnonymous }),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      throw new Error(json.message || "Failed to update visibility");
+    }
+
+    return json;
+  },
+
+  // -------------------------
+  // GET ALL COMPLAINTS (for admin search)
+  // -------------------------
+  getAllComplaints: async (token: string) => {
+    const res = await fetch(`${BASE_URL}/complaints/search?q=`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
     return res.json();
   },
 };

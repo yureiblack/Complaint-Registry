@@ -7,7 +7,13 @@ class PrismaUserRepository {
         return db_1.prisma.user.findUnique({ where: { email } });
     }
     async createUser(data) {
-        return db_1.prisma.user.create({ data });
+        return db_1.prisma.user.create({
+            data: {
+                email: data.email,
+                password: data.password,
+                role: data.role || "USER",
+            },
+        });
     }
 }
 exports.PrismaUserRepository = PrismaUserRepository;

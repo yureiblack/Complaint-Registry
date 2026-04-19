@@ -6,7 +6,13 @@ export class PrismaUserRepository implements IUserRepository {
     return prisma.user.findUnique({ where: { email } });
   }
 
-  async createUser(data: { email: string; password: string }) {
-    return prisma.user.create({ data });
+  async createUser(data: { email: string; password: string; role?: "USER" | "ADMIN" }) {
+    return prisma.user.create({
+      data: {
+        email: data.email,
+        password: data.password,
+        role: data.role || "USER",
+      },
+    });
   }
 }

@@ -61,10 +61,10 @@ const updateStatus = async (req, res) => {
 };
 exports.updateStatus = updateStatus;
 // =====================================================
-// 🌐 PUBLIC SYSTEM
+// PUBLIC SYSTEM
 // =====================================================
 // -------------------------
-// 🌐 PUBLIC FEED
+// PUBLIC FEED
 // -------------------------
 const getPublic = async (_req, res) => {
     try {
@@ -78,7 +78,7 @@ const getPublic = async (_req, res) => {
 };
 exports.getPublic = getPublic;
 // -------------------------
-// 👤 MY COMPLAINTS
+// MY COMPLAINTS
 // -------------------------
 const getMy = async (req, res) => {
     try {
@@ -95,7 +95,7 @@ const getMy = async (req, res) => {
 };
 exports.getMy = getMy;
 // -------------------------
-// 🔍 SEARCH
+// SEARCH
 // -------------------------
 const search = async (req, res) => {
     try {
@@ -113,7 +113,7 @@ const search = async (req, res) => {
 };
 exports.search = search;
 // -------------------------
-// 🔒 UPDATE VISIBILITY
+// UPDATE VISIBILITY
 // -------------------------
 const updateVisibility = async (req, res) => {
     try {

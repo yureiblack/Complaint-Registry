@@ -11,7 +11,7 @@ class AuthService {
     constructor(userRepo) {
         this.userRepo = userRepo;
     }
-    async register(email, password) {
+    async register(email, password, role) {
         const existing = await this.userRepo.findByEmail(email);
         if (existing)
             throw new Error("User already exists");
@@ -19,6 +19,7 @@ class AuthService {
         return this.userRepo.createUser({
             email,
             password: hashed,
+            role,
         });
     }
     async login(email, password) {
