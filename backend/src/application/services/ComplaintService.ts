@@ -3,13 +3,25 @@ import { Complaint } from "../../domain/entities/Complaint";
 import { CreateComplaintDTO } from "../dto/CreateComplaint.dto";
 import { ComplaintStatus } from "../../domain/enums/ComplaintStatus";
 
+import { ComplaintSubject } from "../../domain/observers/ComplaintSubject";
+import { InAppNotifier } from "../../infrastructure/notifications/InAppNotifier";
+import { EmailNotifier } from "../../infrastructure/notifications/EmailNotifier";
+
 type RequestUser = {
   userId: string;
   role: string;
 };
 
 export class ComplaintService {
-  constructor(private repo: IComplaintRepository) {}
+  private subject: ComplaintSubject;
+
+  constructor(private repo: IComplaintRepository) {
+    // 🔥 Initialize observer system
+    this.subject = new ComplaintSubject();
+
+    this.subject.subscribe(new InAppNotifier());
+    this.subject.subscribe(new EmailNotifier());
+  }
 
   // -------------------------
   // CREATE
@@ -22,11 +34,16 @@ export class ComplaintService {
       dto.userId
     );
 
-    return this.repo.create(complaint);
+    const saved = await this.repo.create(complaint);
+
+    // 🔔 Notify
+    this.subject.notify("COMPLAINT_CREATED", saved.toJSON());
+
+    return saved;
   }
 
   // -------------------------
-  // GET BY ID (RBAC)
+  // GET
   // -------------------------
   async getComplaintById(id: string, requester: RequestUser) {
     const complaint = await this.repo.findById(id);
@@ -43,7 +60,7 @@ export class ComplaintService {
   }
 
   // -------------------------
-  // UPDATE STATUS (ADMIN ONLY)
+  // UPDATE STATUS
   // -------------------------
   async updateStatus(
     id: string,
@@ -57,32 +74,34 @@ export class ComplaintService {
     const complaint = await this.repo.findById(id);
     if (!complaint) throw new Error("Complaint not found");
 
-    // ✅ Domain handles lifecycle
     complaint.transitionTo(status);
 
-    return this.repo.update(complaint);
+    const updated = await this.repo.update(complaint);
+
+    // 🔔 Notify ALL observers
+    this.subject.notify("STATUS_UPDATED", updated.toJSON());
+
+    return updated;
   }
 
-  // =====================================================
-  // 🌐 PUBLIC SYSTEM (NEW — ADD THESE)
-  // =====================================================
-
-  // 🌐 PUBLIC FEED
+  // -------------------------
+  // PUBLIC
+  // -------------------------
   async getPublicComplaints() {
     return this.repo.findPublic();
   }
 
-  // 👤 MY COMPLAINTS
   async getMyComplaints(user: RequestUser) {
     return this.repo.findByUser(user.userId);
   }
 
-  // 🔍 SEARCH WITH VISIBILITY RULES
   async search(query: string, user: RequestUser) {
     return this.repo.search(query, user.userId, user.role);
   }
 
-  // 🔒 UPDATE VISIBILITY
+  // -------------------------
+  // VISIBILITY
+  // -------------------------
   async updateVisibility(
     id: string,
     isPublic: boolean,
@@ -101,6 +120,10 @@ export class ComplaintService {
 
     complaint.updateVisibility(isPublic, isAnonymous);
 
-    return this.repo.update(complaint);
+    const updated = await this.repo.update(complaint);
+
+    this.subject.notify("VISIBILITY_UPDATED", updated.toJSON());
+
+    return updated;
   }
 }
