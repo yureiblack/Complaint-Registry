@@ -12,6 +12,15 @@ type Complaint = {
   userId?: string;
 };
 
+type Notification = {
+  id: string;
+  eventType: string;
+  message: string;
+  read: boolean;
+  complaintId: string;
+  createdAt: string;
+};
+
 export default function App() {
   const [mode, setMode] = useState<"login" | "register">("login");
 
@@ -31,6 +40,10 @@ export default function App() {
   const [tab, setTab] = useState<"my" | "admin" | "public">("my");
   const [expandedStatusId, setExpandedStatusId] = useState<string | null>(null);
   const [registrationRole, setRegistrationRole] = useState<"USER" | "ADMIN">("USER");
+
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("token");
@@ -68,6 +81,9 @@ export default function App() {
         setRole(res.role);
         setCurrentUserEmail(email);
         alert("Login successful");
+
+        // Load notifications immediately with the token
+        loadNotifications(res.token);
       } else {
         alert(res.message || "Login failed");
       }
@@ -90,6 +106,38 @@ export default function App() {
     setEmail("");
     setPassword("");
     setTab("my");
+    setNotifications([]);
+    setUnreadCount(0);
+  };
+
+  const loadNotifications = async (authToken: string) => {
+    try {
+      const res = await api.getUnreadNotifications(authToken);
+      setNotifications(res);
+      setUnreadCount(res.length);
+    } catch (err: any) {
+      console.error("Failed to load notifications:", err.message);
+    }
+  };
+
+  const handleNotificationRead = async (notificationId: string) => {
+    try {
+      await api.markNotificationAsRead(notificationId, token);
+      setNotifications(notifications.filter((n) => n.id !== notificationId));
+      setUnreadCount(Math.max(0, unreadCount - 1));
+    } catch (err: any) {
+      alert(err.message || "Failed to mark notification as read");
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await api.markAllNotificationsAsRead(token);
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch (err: any) {
+      alert(err.message || "Failed to mark all as read");
+    }
   };
 
   const create = async () => {
@@ -511,6 +559,74 @@ export default function App() {
       fontSize: "14px",
       transition: "all 0.2s ease",
     },
+    notificationBadge: {
+      position: "absolute" as const,
+      top: "-8px",
+      right: "-8px",
+      background: "#ef4444",
+      color: "white",
+      borderRadius: "50%",
+      width: "24px",
+      height: "24px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: "12px",
+      fontWeight: 700,
+    },
+    notificationDropdown: {
+      position: "absolute" as const,
+      top: "100%",
+      right: 0,
+      width: "360px",
+      maxHeight: "400px",
+      background: "white",
+      border: "1px solid #e2e8f0",
+      borderRadius: "12px",
+      boxShadow: "0 10px 30px rgba(15, 23, 42, 0.12)",
+      marginTop: "8px",
+      zIndex: 1000,
+      overflowY: "auto" as const,
+    },
+    notificationHeader: {
+      padding: "16px",
+      borderBottom: "1px solid #e2e8f0",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    notificationItem: {
+      padding: "12px 16px",
+      borderBottom: "1px solid #f1f5f9",
+      display: "flex",
+      gap: "12px",
+      alignItems: "flex-start",
+    },
+    notificationMessage: {
+      margin: "0 0 4px 0",
+      fontSize: "14px",
+      fontWeight: 600,
+      color: "#0f172a",
+    },
+    notificationTime: {
+      fontSize: "12px",
+      color: "#64748b",
+    },
+    emptyNotification: {
+      padding: "24px 16px",
+      textAlign: "center" as const,
+      color: "#64748b",
+      fontSize: "14px",
+    },
+    dismissButton: {
+      background: "none",
+      border: "none",
+      color: "#94a3b8",
+      cursor: "pointer",
+      fontSize: "16px",
+      padding: "0",
+      marginTop: "4px",
+    },
   };
 
   return (
@@ -631,9 +747,73 @@ export default function App() {
                 </p>
               </div>
 
-              <button style={styles.dangerButton} onClick={handleLogout}>
-                Logout
-              </button>
+              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                <div style={{ position: "relative" }}>
+                  <button
+                    style={{
+                      ...styles.secondaryButton,
+                      position: "relative",
+                      padding: "12px 14px",
+                    }}
+                    onClick={() => setShowNotifications(!showNotifications)}
+                  >
+                    🔔 {unreadCount > 0 && <span style={styles.notificationBadge}>{unreadCount}</span>}
+                  </button>
+
+                  {showNotifications && (
+                    <div style={styles.notificationDropdown}>
+                      <div style={styles.notificationHeader}>
+                        <h3 style={{ margin: "0" }}>Notifications</h3>
+                        {unreadCount > 0 && (
+                          <button
+                            onClick={handleMarkAllRead}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: "#2563eb",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                            }}
+                          >
+                            Mark all read
+                          </button>
+                        )}
+                      </div>
+
+                      {notifications.length === 0 ? (
+                        <div style={styles.emptyNotification}>
+                          No new notifications
+                        </div>
+                      ) : (
+                        notifications.map((notif) => (
+                          <div key={notif.id} style={styles.notificationItem}>
+                            <div style={{ flex: 1 }}>
+                              <p style={styles.notificationMessage}>
+                                {notif.message}
+                              </p>
+                              <span style={styles.notificationTime}>
+                                {new Date(notif.createdAt).toLocaleDateString()}{" "}
+                                {new Date(notif.createdAt).toLocaleTimeString()}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => handleNotificationRead(notif.id)}
+                              style={styles.dismissButton}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <button style={styles.dangerButton} onClick={handleLogout}>
+                  Logout
+                </button>
+              </div>
             </div>
 
             <div style={styles.card}>

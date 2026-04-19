@@ -1,3 +1,3 @@
 export interface ComplaintObserver {
-  update(event: string, data: any): void;
+  update(event: string, data: any): void | Promise<void>;
 }

@@ -133,4 +133,64 @@ export const api = {
 
     return res.json();
   },
+
+  // -------------------------
+  // NOTIFICATIONS
+  // -------------------------
+  getUnreadNotifications: async (token: string) => {
+    const res = await fetch(`${BASE_URL}/notifications/unread`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return res.json();
+  },
+
+  getUnreadCount: async (token: string) => {
+    const res = await fetch(`${BASE_URL}/notifications/unread-count`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return res.json();
+  },
+
+  markNotificationAsRead: async (notificationId: string, token: string) => {
+    const res = await fetch(
+      `${BASE_URL}/notifications/${notificationId}/read`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      throw new Error(json.message || "Failed to mark notification as read");
+    }
+
+    return json;
+  },
+
+  markAllNotificationsAsRead: async (token: string) => {
+    const res = await fetch(`${BASE_URL}/notifications/read-all`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      throw new Error(json.message || "Failed to mark all notifications as read");
+    }
+
+    return json;
+  },
 };

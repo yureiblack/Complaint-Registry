@@ -18,6 +18,7 @@ model User {
   password  String
   role      Role     @default(USER)
   complaints Complaint[]
+  notifications Notification[]
 }
 
 model Complaint {
@@ -30,6 +31,8 @@ model Complaint {
 
   userId String
   user   User @relation(fields: [userId], references: [id])
+
+  notifications Notification[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -47,4 +50,24 @@ enum ComplaintStatus {
   RESOLVED
   REJECTED
   CLOSED
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+
+  eventType String   // "COMPLAINT_CREATED" | "STATUS_UPDATED"
+  message   String
+
+  read      Boolean  @default(false)
+  readAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+  @@index([complaintId])
 }
