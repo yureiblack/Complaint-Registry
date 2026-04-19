@@ -50,13 +50,17 @@ export default function App() {
   // CREATE COMPLAINT
   // -------------------------
   const create = async () => {
-    const res = await api.createComplaint(
-      { title, description },
-      token
-    );
+    try {
+      const res = await api.createComplaint(
+        { title, description },
+        token
+      );
 
-    alert("Created");
-    console.log(res);
+      alert("Complaint created successfully");
+      console.log(res);
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   // -------------------------

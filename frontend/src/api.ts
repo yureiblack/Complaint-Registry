@@ -35,7 +35,7 @@ export const api = {
     data: { title: string; description: string },
     token: string
   ) => {
-    const res = await fetch(`${BASE_URL}/complaints`, {
+    const res = await fetch(`http://localhost:3000/complaints`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -44,7 +44,13 @@ export const api = {
       body: JSON.stringify(data),
     });
 
-    return res.json();
+    const json = await res.json();
+
+    if (!res.ok) {
+      throw new Error(json.message || "Request failed");
+    }
+
+    return json;
   },
 
   getMy: async (token: string) => {
