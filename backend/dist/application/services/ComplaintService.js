@@ -6,25 +6,24 @@ class ComplaintService {
     constructor(repo) {
         this.repo = repo;
     }
-    // -------------------------
-    // CREATE COMPLAINT
-    // -------------------------
     async createComplaint(dto) {
-        const complaint = new Complaint_1.Complaint("", // id will be replaced by DB
-        dto.title, dto.description, dto.userId);
-        const saved = await this.repo.create(complaint);
-        return saved;
+        const complaint = new Complaint_1.Complaint("", dto.title, dto.description, dto.userId);
+        return this.repo.create(complaint);
     }
-    // -------------------------
-    // GET COMPLAINT
-    // -------------------------
-    async getComplaintById(id) {
-        return this.repo.findById(id);
+    async getComplaintById(id, requester) {
+        const complaint = await this.repo.findById(id);
+        if (!complaint)
+            throw new Error("Complaint not found");
+        if (requester.role !== "ADMIN" &&
+            complaint.userId !== requester.userId) {
+            throw new Error("Forbidden");
+        }
+        return complaint;
     }
-    // -------------------------
-    // STATUS TRANSITION
-    // -------------------------
-    async updateStatus(id, status) {
+    async updateStatus(id, status, requester) {
+        if (requester.role !== "ADMIN") {
+            throw new Error("Only admin can update status");
+        }
         const complaint = await this.repo.findById(id);
         if (!complaint)
             throw new Error("Complaint not found");

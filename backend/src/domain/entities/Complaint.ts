@@ -2,16 +2,21 @@ import { ComplaintStatus } from "../enums/ComplaintStatus";
 
 export class Complaint {
   private status: ComplaintStatus;
+  private isPublic: boolean;
+  private isAnonymous: boolean;
 
   constructor(
-    public readonly id: string,   // ✔ comes from Prisma
+    public readonly id: string,
     public title: string,
     public description: string,
     public readonly userId: string,
-    private isPublic: boolean = false,
-    private isAnonymous: boolean = false
+    status: ComplaintStatus = ComplaintStatus.SUBMITTED,
+    isPublic: boolean = false,
+    isAnonymous: boolean = false
   ) {
-    this.status = ComplaintStatus.SUBMITTED;
+    this.status = status;
+    this.isPublic = isPublic;
+    this.isAnonymous = isAnonymous;
   }
 
   // -------------------------
@@ -25,7 +30,20 @@ export class Complaint {
   getVisibility() {
     return {
       isPublic: this.isPublic,
-      isAnonymous: this.isAnonymous
+      isAnonymous: this.isAnonymous,
+    };
+  }
+
+  // Used when returning API response
+  toJSON() {
+    return {
+      id: this.id,
+      title: this.title,
+      description: this.description,
+      userId: this.userId,
+      status: this.status,
+      isPublic: this.isPublic,
+      isAnonymous: this.isAnonymous,
     };
   }
 
@@ -34,6 +52,11 @@ export class Complaint {
   // -------------------------
 
   updateVisibility(isPublic: boolean, isAnonymous: boolean) {
+    // Rule: private complaints cannot be anonymous
+    if (!isPublic && isAnonymous) {
+      throw new Error("Private complaints cannot be anonymous");
+    }
+
     this.isPublic = isPublic;
     this.isAnonymous = isAnonymous;
   }
@@ -44,11 +67,11 @@ export class Complaint {
       [ComplaintStatus.UNDER_REVIEW]: [ComplaintStatus.IN_PROGRESS],
       [ComplaintStatus.IN_PROGRESS]: [
         ComplaintStatus.RESOLVED,
-        ComplaintStatus.REJECTED
+        ComplaintStatus.REJECTED,
       ],
       [ComplaintStatus.RESOLVED]: [ComplaintStatus.CLOSED],
       [ComplaintStatus.REJECTED]: [ComplaintStatus.CLOSED],
-      [ComplaintStatus.CLOSED]: []
+      [ComplaintStatus.CLOSED]: [],
     };
 
     if (!allowed[this.status].includes(next)) {
@@ -58,5 +81,29 @@ export class Complaint {
     }
 
     this.status = next;
+  }
+
+  // -------------------------
+  // FACTORY (IMPORTANT)
+  // -------------------------
+
+  static fromPersistence(data: {
+    id: string;
+    title: string;
+    description: string;
+    userId: string;
+    status: ComplaintStatus;
+    isPublic: boolean;
+    isAnonymous: boolean;
+  }): Complaint {
+    return new Complaint(
+      data.id,
+      data.title,
+      data.description,
+      data.userId,
+      data.status,
+      data.isPublic,
+      data.isAnonymous
+    );
   }
 }

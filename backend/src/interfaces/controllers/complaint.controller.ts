@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { ComplaintService } from "../../application/services/ComplaintService";
 import { PrismaComplaintRepository } from "../../infrastructure/repositories/PrismaComplaintRepository";
 import { ComplaintStatus } from "../../domain/enums/ComplaintStatus";
+import { AuthRequest } from "../middleware/auth.middleware";
 
 const service = new ComplaintService(new PrismaComplaintRepository());
 
@@ -16,23 +17,34 @@ export const createComplaint = async (req: Request, res: Response) => {
   res.json(result);
 };
 
-// GET BY ID
 export const getComplaint = async (
-  req: Request<IdParams>,
+  req: AuthRequest,
   res: Response
 ) => {
-  const result = await service.getComplaintById(req.params.id);
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const id = req.params.id as string;
+
+  const result = await service.getComplaintById(id, req.user);
   res.json(result);
 };
 
-// UPDATE STATUS
 export const updateStatus = async (
-  req: Request<IdParams>,
+  req: AuthRequest,
   res: Response
 ) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const id = req.params.id as string;
+
   const result = await service.updateStatus(
-    req.params.id,
-    req.body.status as ComplaintStatus
+    id,
+    req.body.status,
+    req.user
   );
 
   res.json(result);
