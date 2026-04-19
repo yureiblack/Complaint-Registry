@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { IUserRepository } from "../../domain/interfaces/IUserRepository";
+import { JWT_SECRET } from "../../config/env";
 
 export class AuthService {
   constructor(private userRepo: IUserRepository) {}
@@ -26,7 +27,7 @@ export class AuthService {
 
     const token = jwt.sign(
       { userId: user.id, role: user.role },
-      "SECRET_KEY",
+      JWT_SECRET,
       { expiresIn: "1d" }
     );
 
