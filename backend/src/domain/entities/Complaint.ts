@@ -10,13 +10,13 @@ export class Complaint {
     public title: string,
     public description: string,
     public readonly userId: string,
-    status: ComplaintStatus = ComplaintStatus.SUBMITTED,
     isPublic: boolean = false,
-    isAnonymous: boolean = false
+    isAnonymous: boolean = false,
+    status: ComplaintStatus = ComplaintStatus.SUBMITTED
   ) {
-    this.status = status;
     this.isPublic = isPublic;
     this.isAnonymous = isAnonymous;
+    this.status = status;
   }
 
   // -------------------------
@@ -34,7 +34,10 @@ export class Complaint {
     };
   }
 
-  // Used when returning API response
+  // -------------------------
+  // SERIALIZATION
+  // -------------------------
+
   toJSON() {
     return {
       id: this.id,
@@ -84,7 +87,7 @@ export class Complaint {
   }
 
   // -------------------------
-  // FACTORY (IMPORTANT)
+  // FACTORY (FOR DB → DOMAIN)
   // -------------------------
 
   static fromPersistence(data: {
@@ -101,9 +104,9 @@ export class Complaint {
       data.title,
       data.description,
       data.userId,
-      data.status,
       data.isPublic,
-      data.isAnonymous
+      data.isAnonymous,
+      data.status
     );
   }
 }
