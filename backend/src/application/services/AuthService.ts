@@ -1,0 +1,35 @@
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { IUserRepository } from "../../domain/interfaces/IUserRepository";
+
+export class AuthService {
+  constructor(private userRepo: IUserRepository) {}
+
+  async register(email: string, password: string) {
+    const existing = await this.userRepo.findByEmail(email);
+    if (existing) throw new Error("User already exists");
+
+    const hashed = await bcrypt.hash(password, 10);
+
+    return this.userRepo.createUser({
+      email,
+      password: hashed,
+    });
+  }
+
+  async login(email: string, password: string) {
+    const user = await this.userRepo.findByEmail(email);
+    if (!user) throw new Error("Invalid credentials");
+
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) throw new Error("Invalid credentials");
+
+    const token = jwt.sign(
+      { userId: user.id, role: user.role },
+      "SECRET_KEY",
+      { expiresIn: "1d" }
+    );
+
+    return { token };
+  }
+}
