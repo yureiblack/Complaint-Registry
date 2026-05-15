@@ -9,6 +9,7 @@ type Complaint = {
   isAnonymous?: boolean;
   isPublic?: boolean;
   userId?: string;
+  creatorEmail?: string;
 };
 
 export default function AdminPanel({ token }: { token: string }) {
@@ -168,6 +169,9 @@ export default function AdminPanel({ token }: { token: string }) {
             )}
 
             <div style={styles.badgeRow}>
+              {complaint.creatorEmail && (
+                <span style={styles.badge}>Creator: {complaint.creatorEmail}</span>
+              )}
               {complaint.status && (
                 <span style={styles.badge}>Status: {complaint.status}</span>
               )}

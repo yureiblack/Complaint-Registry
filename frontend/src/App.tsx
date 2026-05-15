@@ -10,6 +10,7 @@ type Complaint = {
   isAnonymous?: boolean;
   isPublic?: boolean;
   userId?: string;
+  creatorEmail?: string;
 };
 
 type Notification = {
@@ -36,8 +37,9 @@ export default function App() {
 
   const [my, setMy] = useState<Complaint[]>([]);
   const [pub, setPub] = useState<Complaint[]>([]);
+  const [priv, setPriv] = useState<Complaint[]>([]);
 
-  const [tab, setTab] = useState<"my" | "admin" | "public">("my");
+  const [tab, setTab] = useState<"my" | "admin" | "public" | "private">("my");
   const [expandedStatusId, setExpandedStatusId] = useState<string | null>(null);
   const [registrationRole, setRegistrationRole] = useState<"USER" | "ADMIN">("USER");
 
@@ -101,6 +103,7 @@ export default function App() {
     setCurrentUserEmail("");
     setMy([]);
     setPub([]);
+    setPriv([]);
     setTitle("");
     setDescription("");
     setEmail("");
@@ -172,6 +175,17 @@ export default function App() {
     }
   };
 
+  const loadPrivate = async () => {
+    try {
+      const res = await api.getAllComplaints(token);
+      // Filter to only private complaints
+      const privateComplaints = res.filter((c: any) => !c.isPublic);
+      setPriv(privateComplaints);
+    } catch (err: any) {
+      alert(err.message || "Failed to load private complaints");
+    }
+  };
+
   const handleStatusUpdate = async (id: string, newStatus: string) => {
     try {
       await api.updateStatus(id, newStatus, token);
@@ -225,6 +239,9 @@ export default function App() {
       )}
 
       <div style={styles.badgeRow}>
+        {complaint.creatorEmail && (
+          <span style={styles.badge}>By: {complaint.creatorEmail}</span>
+        )}
         {complaint.status && (
           <span style={styles.badge}>Status: {complaint.status}</span>
         )}
@@ -816,56 +833,43 @@ export default function App() {
               </div>
             </div>
 
-            <div style={styles.card}>
-              <h3 style={styles.subTitle}>Create Complaint</h3>
+            {role !== "ADMIN" && (
+              <div style={styles.card}>
+                <h3 style={styles.subTitle}>Create Complaint</h3>
 
-              <input
-                style={styles.input}
-                placeholder="Complaint title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
+                <input
+                  style={styles.input}
+                  placeholder="Complaint title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
 
-              <textarea
-                style={styles.textarea}
-                placeholder="Describe your issue in detail..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
+                <textarea
+                  style={styles.textarea}
+                  placeholder="Describe your issue in detail..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
 
-              <div style={styles.buttonRow}>
-                <button style={styles.primaryButton} onClick={create}>
-                  Create Complaint
-                </button>
-                <button style={styles.secondaryButton} onClick={loadMy}>
-                  Load My Complaints
-                </button>
-                <button style={styles.secondaryButton} onClick={loadPublic}>
-                  Load Public Complaints
-                </button>
+                <div style={styles.buttonRow}>
+                  <button style={styles.primaryButton} onClick={create}>
+                    Create Complaint
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             <div style={styles.card}>
               <div style={styles.tabBar}>
-                <button
-                  style={{
-                    ...styles.tab,
-                    ...(tab === "my" ? styles.tabActive : {}),
-                  }}
-                  onClick={() => setTab("my")}
-                >
-                  My Complaints
-                </button>
-                {role === "ADMIN" && (
+                {role !== "ADMIN" && (
                   <button
                     style={{
                       ...styles.tab,
-                      ...(tab === "admin" ? styles.tabActive : {}),
+                      ...(tab === "my" ? styles.tabActive : {}),
                     }}
-                    onClick={() => setTab("admin")}
+                    onClick={() => setTab("my")}
                   >
-                    Admin Panel
+                    My Complaints
                   </button>
                 )}
                 <button
@@ -873,10 +877,27 @@ export default function App() {
                     ...styles.tab,
                     ...(tab === "public" ? styles.tabActive : {}),
                   }}
-                  onClick={() => setTab("public")}
+                  onClick={() => {
+                    setTab("public");
+                    loadPublic();
+                  }}
                 >
                   Public Complaints
                 </button>
+                {role === "ADMIN" && (
+                  <button
+                    style={{
+                      ...styles.tab,
+                      ...(tab === "private" ? styles.tabActive : {}),
+                    }}
+                    onClick={() => {
+                      setTab("private");
+                      loadPrivate();
+                    }}
+                  >
+                    Private Complaints
+                  </button>
+                )}
               </div>
 
               {tab === "my" && (
@@ -902,6 +923,26 @@ export default function App() {
 
               {tab === "admin" && role === "ADMIN" && (
                 <AdminPanel token={token} />
+              )}
+
+              {tab === "private" && role === "ADMIN" && (
+                <>
+                  <h3 style={styles.subTitle}>Private Complaints</h3>
+                  {priv.length === 0 ? (
+                    <div style={styles.emptyState}>
+                      No private complaints found.
+                    </div>
+                  ) : (
+                    priv.map((c) => (
+                      <div key={c.id} style={styles.complaintCard}>
+                        <ComplaintCardContent
+                          complaint={c}
+                          showStatusButton={true}
+                        />
+                      </div>
+                    ))
+                  )}
+                </>
               )}
 
               {tab === "public" && (
