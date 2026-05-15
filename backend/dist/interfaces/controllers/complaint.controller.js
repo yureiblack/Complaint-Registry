@@ -68,8 +68,26 @@ exports.updateStatus = updateStatus;
 // -------------------------
 const getPublic = async (_req, res) => {
     try {
-        const data = await service.getPublicComplaints();
-        res.json(data.map((c) => c.toJSON()));
+        const { prisma } = require("../../config/db");
+        const data = await prisma.complaint.findMany({
+            where: { isPublic: true },
+            include: {
+                user: { select: { email: true } },
+            },
+            orderBy: { createdAt: "desc" },
+        });
+        res.json(data.map((c) => ({
+            id: c.id,
+            title: c.title,
+            description: c.description,
+            status: c.status,
+            isPublic: c.isPublic,
+            isAnonymous: c.isAnonymous,
+            userId: c.userId,
+            creatorEmail: !c.isAnonymous ? c.user.email : undefined,
+            createdAt: c.createdAt,
+            updatedAt: c.updatedAt,
+        })));
     }
     catch (err) {
         console.error("PUBLIC FEED ERROR:", err);
@@ -103,8 +121,39 @@ const search = async (req, res) => {
             return res.status(401).json({ message: "Unauthorized" });
         }
         const query = req.query.q || "";
-        const data = await service.search(query, req.user);
-        res.json(data.map((c) => c.toJSON()));
+        // For admins, get complaints with user data included
+        if (req.user.role === "ADMIN") {
+            const { prisma } = require("../../config/db");
+            const data = await prisma.complaint.findMany({
+                where: {
+                    OR: [
+                        { title: { contains: query } },
+                        { description: { contains: query } },
+                    ],
+                },
+                include: {
+                    user: { select: { email: true } },
+                },
+                orderBy: { createdAt: "desc" },
+            });
+            res.json(data.map((c) => ({
+                id: c.id,
+                title: c.title,
+                description: c.description,
+                status: c.status,
+                isPublic: c.isPublic,
+                isAnonymous: c.isAnonymous,
+                userId: c.userId,
+                creatorEmail: c.user.email,
+                createdAt: c.createdAt,
+                updatedAt: c.updatedAt,
+            })));
+        }
+        else {
+            // For regular users, use the service logic
+            const data = await service.search(query, req.user);
+            res.json(data.map((c) => c.toJSON()));
+        }
     }
     catch (err) {
         console.error("SEARCH ERROR:", err);

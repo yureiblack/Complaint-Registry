@@ -51,6 +51,9 @@ class PrismaComplaintRepository {
     async findPublic() {
         const data = await db_1.prisma.complaint.findMany({
             where: { isPublic: true },
+            include: {
+                user: { select: { email: true } },
+            },
             orderBy: { createdAt: "desc" },
         });
         return data.map((d) => ComplaintMapper_1.ComplaintMapper.toDomain(d));
@@ -83,6 +86,9 @@ class PrismaComplaintRepository {
                         ]
                         : []),
                 ],
+            },
+            include: {
+                user: true,
             },
             orderBy: { createdAt: "desc" },
         });

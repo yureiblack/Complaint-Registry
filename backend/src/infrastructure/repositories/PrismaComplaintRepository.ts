@@ -61,6 +61,9 @@ export class PrismaComplaintRepository implements IComplaintRepository {
   async findPublic(): Promise<Complaint[]> {
     const data = await prisma.complaint.findMany({
       where: { isPublic: true },
+      include: {
+        user: { select: { email: true } },
+      },
       orderBy: { createdAt: "desc" },
     });
 
@@ -101,6 +104,9 @@ export class PrismaComplaintRepository implements IComplaintRepository {
               ]
             : []),
         ],
+      },
+      include: {
+        user: true,
       },
       orderBy: { createdAt: "desc" },
     });
